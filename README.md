@@ -1,5 +1,5 @@
 
-# EKS Tech Interview Solution
+# EKS Terraform Helm Solution
 
 A production-ready Kubernetes application deployment on AWS EKS with automated scaling and CI/CD.
 
@@ -124,6 +124,7 @@ kind delete cluster --name tech-interview-test
 cd terraform/
 terraform destroy
 ```
+
 
 
 
