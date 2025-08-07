@@ -1,0 +1,249 @@
+# .github/workflows/deploy.yml
+name: 'Deploy EKS Tech Interview'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Manual trigger for demos
+
+env:
+  AWS_REGION: 'us-west-2'
+  CLUSTER_NAME: 'minimal-eks'
+  TF_VERSION: '1.6.0'
+  HELM_VERSION: '3.13.0'
+
+jobs:
+  # Validate Terraform and Helm on PRs
+  validate:
+    name: 'Validate Infrastructure'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: ${{ env.HELM_VERSION }}
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -recursive terraform/
+      
+    - name: Terraform Init & Validate
+      run: |
+        cd terraform/
+        terraform init -backend=false
+        terraform validate
+
+    - name: Helm Lint
+      run: |
+        cd helm/tech-interview/
+        helm lint .
+
+    - name: Helm Template Test
+      run: |
+        cd helm/tech-interview/
+        helm template test-release . --dry-run
+
+  # Deploy infrastructure and application on main branch
+  deploy:
+    name: 'Deploy to AWS'
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production  # Requires approval for production
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: ${{ env.HELM_VERSION }}
+
+    # Deploy Infrastructure
+    - name: Deploy EKS Infrastructure
+      run: |
+        cd terraform/
+        terraform init
+        terraform plan -var="cluster_name=${{ env.CLUSTER_NAME }}" -out=tfplan
+        terraform apply -auto-approve tfplan
+      
+    - name: Get Terraform Outputs
+      id: tf-outputs
+      run: |
+        cd terraform/
+        echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+        echo "cluster_endpoint=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
+
+    - name: Configure kubectl
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ steps.tf-outputs.outputs.cluster_name }}
+
+    - name: Wait for Cluster Ready
+      run: |
+        echo "Waiting for cluster nodes to be ready..."
+        kubectl wait --for=condition=Ready nodes --all --timeout=600s
+        kubectl get nodes
+
+    # Deploy Application
+    - name: Deploy Application with Helm
+      run: |
+        cd helm/tech-interview/
+        helm upgrade --install tech-interview . \
+          --wait --timeout=600s \
+          --set image.tag=latest
+
+    - name: Wait for Application Ready
+      run: |
+        kubectl wait --for=condition=available --timeout=300s deployment/tech-interview
+        kubectl get pods -o wide
+
+    # Test Application
+    - name: Test Health Endpoints
+      id: health-test
+      run: |
+        echo "Getting Ingress endpoint..."
+        
+        # Wait for Ingress to get ALB endpoint
+        for i in {1..30}; do
+          INGRESS_ENDPOINT=$(kubectl get ingress tech-interview -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          if [ ! -z "$INGRESS_ENDPOINT" ]; then
+            echo "Ingress ALB ready: $INGRESS_ENDPOINT"
+            echo "endpoint=$INGRESS_ENDPOINT" >> $GITHUB_OUTPUT
+            break
+          fi
+          echo "Waiting for Ingress ALB endpoint... ($i/30)"
+          sleep 20
+        done
+        
+        if [ -z "$INGRESS_ENDPOINT" ]; then
+          echo "Ingress not ready, checking LoadBalancer service as fallback..."
+          EXTERNAL_IP=$(kubectl get svc tech-interview -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          if [ ! -z "$EXTERNAL_IP" ]; then
+            echo "LoadBalancer service ready: $EXTERNAL_IP"
+            echo "endpoint=$EXTERNAL_IP" >> $GITHUB_OUTPUT
+          else
+            echo "Neither Ingress nor LoadBalancer ready, using port-forward for testing..."
+            kubectl port-forward svc/tech-interview 8080:80 &
+            sleep 10
+            echo "endpoint=localhost:8080" >> $GITHUB_OUTPUT
+          fi
+        else
+          # Wait a bit more for ALB to be fully operational
+          sleep 60
+        fi
+
+    - name: Test Readiness Probe
+      run: |
+        endpoint="${{ steps.health-test.outputs.endpoint }}"
+        echo "Testing readiness probe at http://$endpoint/"
+        
+        for i in {1..10}; do
+          if curl -f -s "http://$endpoint/" | grep -q "OK"; then
+            echo "✅ Readiness probe successful - returned 'OK'"
+            break
+          else
+            echo "⏳ Readiness probe attempt $i/10..."
+            sleep 10
+          fi
+        done
+
+    - name: Test Liveness Probe
+      run: |
+        endpoint="${{ steps.health-test.outputs.endpoint }}"
+        echo "Testing liveness probe at http://$endpoint/hello"
+        
+        for i in {1..10}; do
+          if curl -f -s "http://$endpoint/hello" | grep -q "world"; then
+            echo "✅ Liveness probe successful - returned 'world'"
+            break
+          else
+            echo "⏳ Liveness probe attempt $i/10..."
+            sleep 10
+          fi
+        done
+
+    # Display deployment information
+    - name: Display Deployment Info
+      run: |
+        echo "🎉 Deployment Summary"
+        echo "===================="
+        echo "Cluster: ${{ steps.tf-outputs.outputs.cluster_name }}"
+        echo "Region: ${{ env.AWS_REGION }}"
+        echo "Application Endpoint: http://${{ steps.health-test.outputs.endpoint }}"
+        echo ""
+        echo "📋 Kubernetes Resources:"
+        kubectl get all
+        echo ""
+        echo "🌐 Ingress Status:"
+        kubectl get ingress
+        echo ""
+        echo "🔄 HPA Status:"
+        kubectl get hpa
+        echo ""
+        echo "🖥️ Nodes:"
+        kubectl get nodes -o wide
+        echo ""
+        echo "✅ Test the application:"
+        echo "curl http://${{ steps.health-test.outputs.endpoint }}/"
+        echo "curl http://${{ steps.health-test.outputs.endpoint }}/hello"
+
+    - name: Test Auto-Scaling (Optional)
+      run: |
+        echo "📈 Testing HPA scaling capability..."
+        kubectl get hpa tech-interview
+        echo "Current replicas:"
+        kubectl get deployment tech-interview -o jsonpath='{.status.replicas}'
+
+  # Manual destroy job (workflow_dispatch only)
+  destroy:
+    name: 'Destroy Infrastructure'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    environment: destruction
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Destroy Infrastructure
+      run: |
+        cd terraform/
+        terraform init
+        terraform destroy -auto-approve -var="cluster_name=${{ env.CLUSTER_NAME }}"
