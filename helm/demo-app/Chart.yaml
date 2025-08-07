@@ -1,5 +1,5 @@
 apiVersion: v2
-name: tech-interview
+name: demo-app
 description: Tech Interview Application
 type: application
 version: 1.0.0

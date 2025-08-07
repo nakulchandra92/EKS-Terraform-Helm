@@ -11,7 +11,7 @@ on:
   workflow_dispatch:  # Manual trigger for demos
 
 env:
-  AWS_REGION: 'us-west-2'
+  AWS_REGION: 'eu-central-1'
   CLUSTER_NAME: 'minimal-eks'
   TF_VERSION: '1.6.0'
   HELM_VERSION: '3.13.0'
@@ -21,7 +21,7 @@ jobs:
   validate:
     name: 'Validate Infrastructure'
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+#    if: github.event_name == 'pull_request'
     
     steps:
     - name: Checkout Code
@@ -48,12 +48,12 @@ jobs:
 
     - name: Helm Lint
       run: |
-        cd helm/tech-interview/
+        cd helm/demo-app/
         helm lint .
 
     - name: Helm Template Test
       run: |
-        cd helm/tech-interview/
+        cd helm/demo-app/
         helm template test-release . --dry-run
 
   # Deploy infrastructure and application on main branch
@@ -112,14 +112,14 @@ jobs:
     # Deploy Application
     - name: Deploy Application with Helm
       run: |
-        cd helm/tech-interview/
-        helm upgrade --install tech-interview . \
+        cd helm/demo-app/
+        helm upgrade --install demo-app . \
           --wait --timeout=600s \
           --set image.tag=latest
 
     - name: Wait for Application Ready
       run: |
-        kubectl wait --for=condition=available --timeout=300s deployment/tech-interview
+        kubectl wait --for=condition=available --timeout=300s deployment/demo-app
         kubectl get pods -o wide
 
     # Test Application
@@ -130,7 +130,7 @@ jobs:
         
         # Wait for Ingress to get ALB endpoint
         for i in {1..30}; do
-          INGRESS_ENDPOINT=$(kubectl get ingress tech-interview -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          INGRESS_ENDPOINT=$(kubectl get ingress demo-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           if [ ! -z "$INGRESS_ENDPOINT" ]; then
             echo "Ingress ALB ready: $INGRESS_ENDPOINT"
             echo "endpoint=$INGRESS_ENDPOINT" >> $GITHUB_OUTPUT
@@ -142,13 +142,13 @@ jobs:
         
         if [ -z "$INGRESS_ENDPOINT" ]; then
           echo "Ingress not ready, checking LoadBalancer service as fallback..."
-          EXTERNAL_IP=$(kubectl get svc tech-interview -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          EXTERNAL_IP=$(kubectl get svc demo-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           if [ ! -z "$EXTERNAL_IP" ]; then
             echo "LoadBalancer service ready: $EXTERNAL_IP"
             echo "endpoint=$EXTERNAL_IP" >> $GITHUB_OUTPUT
           else
             echo "Neither Ingress nor LoadBalancer ready, using port-forward for testing..."
-            kubectl port-forward svc/tech-interview 8080:80 &
+            kubectl port-forward svc/demo-app 8080:80 &
             sleep 10
             echo "endpoint=localhost:8080" >> $GITHUB_OUTPUT
           fi
@@ -215,9 +215,9 @@ jobs:
     - name: Test Auto-Scaling (Optional)
       run: |
         echo "📈 Testing HPA scaling capability..."
-        kubectl get hpa tech-interview
+        kubectl get hpa demo-app
         echo "Current replicas:"
-        kubectl get deployment tech-interview -o jsonpath='{.status.replicas}'
+        kubectl get deployment demo-app -o jsonpath='{.status.replicas}'
 
   # Manual destroy job (workflow_dispatch only)
   destroy:

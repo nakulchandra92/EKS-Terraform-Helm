@@ -14,9 +14,9 @@ terraform {
 
   # Comment out S3 backend for local testing
   # backend "s3" {
-  #   bucket = "eks-tech-interview-tfstate"
+  #   bucket = "eks-demo-app-tfstate"
   #   key    = "minimal-eks/terraform.tfstate"
-  #   region = "us-west-2"
+  #   region = "eu-central-1"
   # }
 }
 
@@ -26,7 +26,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = var.environment
-      Project     = "tech-interview"
+      Project     = "demo-app"
       ManagedBy   = "terraform"
     }
   }

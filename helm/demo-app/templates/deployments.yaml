@@ -1,4 +1,4 @@
-# helm/tech-interview/templates/deployment.yaml
+# helm/demo-app/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:

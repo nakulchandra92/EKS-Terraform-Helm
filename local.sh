@@ -15,7 +15,7 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
-CLUSTER_NAME="tech-interview-test"
+CLUSTER_NAME="demo-test"
 
 cleanup() {
     log_info "Cleaning up..."
@@ -103,7 +103,7 @@ kubectl wait --namespace ingress-nginx \
 log_success "NGINX Ingress Controller deployed"
 
 # Deploy the tech interview application
-log_info "Deploying tech-interview application..."
+log_info "Deploying demo-app application..."
 
 # Create modified values for local testing
 cat > /tmp/local-values.yaml <<EOF
@@ -140,8 +140,8 @@ autoscaling:
 EOF
 
 # Deploy with local values
-cd helm/tech-interview/
-helm upgrade --install tech-interview . \
+cd helm/demo-app/
+helm upgrade --install demo-app . \
   --values /tmp/local-values.yaml \
   --wait --timeout=300s
 
@@ -149,7 +149,7 @@ log_success "Application deployed successfully"
 
 # Wait for pods to be ready
 log_info "Waiting for application pods to be ready..."
-kubectl wait --for=condition=available --timeout=120s deployment/tech-interview
+kubectl wait --for=condition=available --timeout=120s deployment/demo-app
 
 # Display deployment status
 log_info "Deployment Status:"
@@ -167,7 +167,7 @@ log_info "Testing application endpoints..."
 
 # Test via port-forward (guaranteed to work)
 log_info "Testing via port-forward..."
-kubectl port-forward svc/tech-interview 9090:80 &
+kubectl port-forward svc/demo-app 9090:80 &
 PORT_FORWARD_PID=$!
 sleep 5
 
@@ -209,24 +209,24 @@ fi
 
 # Test auto-scaling capability
 log_info "Testing HPA auto-scaling capability..."
-kubectl get hpa tech-interview
+kubectl get hpa demo-app
 
 # Generate some load to test scaling
 log_info "Generating load to test auto-scaling (30 seconds)..."
 kubectl run load-generator --image=busybox --restart=Never --rm -it --timeout=30s -- \
-  /bin/sh -c "while true; do wget -q -O- http://tech-interview.default.svc.cluster.local/; sleep 0.1; done" &
+  /bin/sh -c "while true; do wget -q -O- http://demo-app.default.svc.cluster.local/; sleep 0.1; done" &
 
 # Monitor for a bit
 sleep 10
-kubectl get hpa tech-interview
-kubectl get pods | grep tech-interview
+kubectl get hpa demo-app
+kubectl get pods | grep demo-app
 
 # Clean up load generator
 kubectl delete pod load-generator --ignore-not-found=true
 
 # Validate Helm chart
 log_info "Validating Helm chart..."
-cd ../../helm/tech-interview/
+cd ../../helm/demo-app/
 helm lint .
 helm template test-release . --dry-run > /dev/null
 log_success "✅ Helm chart validation PASSED"
@@ -250,21 +250,21 @@ echo "========================================"
 echo "✅ Kind cluster created and configured"
 echo "✅ Metrics-server deployed for HPA"
 echo "✅ NGINX Ingress Controller deployed"
-echo "✅ Tech Interview application deployed"
+echo "✅ demo-app application deployed"
 echo "✅ Health probes working (/ → OK, /hello → world)"
 echo "✅ Auto-scaling configured and tested"
 echo "✅ Helm chart validated"
 echo "✅ Terraform syntax validated"
 echo ""
 echo "🌐 Access Points:"
-echo "  - Via port-forward: kubectl port-forward svc/tech-interview 9090:80"
+echo "  - Via port-forward: kubectl port-forward svc/demo-app 9090:80"
 echo "  - Via ingress: http://localhost:8080 (if working)"
 echo ""
 echo "🔍 Monitoring Commands:"
 echo "  - kubectl get pods"
 echo "  - kubectl get hpa"
 echo "  - kubectl get ingress"
-echo "  - kubectl logs -f deployment/tech-interview"
+echo "  - kubectl logs -f deployment/demo-app"
 echo ""
 echo "🧹 Cleanup:"
 echo "  - kind delete cluster --name $CLUSTER_NAME"
@@ -273,5 +273,5 @@ echo ""
 log_info "Press Ctrl+C to cleanup and exit, or explore the cluster..."
 while true; do
     sleep 30
-    kubectl get pods --no-headers | grep tech-interview | head -1
+    kubectl get pods --no-headers | grep demo-app | head -1
 done

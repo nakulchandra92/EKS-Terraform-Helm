@@ -44,10 +44,10 @@ curl http://localhost:8080/hello # Returns "world"
 aws configure
 
 # 2. Create S3 bucket for Terraform state
-aws s3 mb s3://your-terraform-state-bucket --region us-west-2
+aws s3 mb s3://your-terraform-state-bucket --region eu-central-1
 
 # 3. Update bucket name in terraform/main.tf
-sed -i 's/eks-tech-interview-tfstate/your-bucket-name/g' terraform/main.tf
+sed -i 's/eks-demo-app-tfstate/your-bucket-name/g' terraform/main.tf
 
 # 4. Deploy infrastructure
 cd terraform/
@@ -55,11 +55,11 @@ terraform init
 terraform apply
 
 # 5. Configure kubectl
-aws eks update-kubeconfig --region us-west-2 --name minimal-eks
+aws eks update-kubeconfig --region eu-central-1 --name minimal-eks
 
 # 6. Deploy application
-cd ../helm/tech-interview/
-helm upgrade --install tech-interview . --wait
+cd ../helm/demo-app/
+helm upgrade --install demo-app . --wait
 
 # 7. Test endpoints
 kubectl get ingress  # Get ALB URL
@@ -88,7 +88,7 @@ curl http://your-alb-url/hello
 ├── terraform/           # Infrastructure as Code
 │   ├── main.tf         # EKS cluster configuration
 │   └── variables.tf    # Configuration variables
-├── helm/tech-interview/ # Kubernetes application
+├── helm/demo-app/ # Kubernetes application
 │   ├── values.yaml     # Application configuration
 │   └── templates/      # K8s manifests
 ├── .github/workflows/  # CI/CD pipeline
@@ -118,7 +118,7 @@ The application provides the required endpoints:
 
 ```bash
 # Delete local cluster
-kind delete cluster --name tech-interview-test
+kind delete cluster --name demo-test
 
 # Delete AWS resources
 cd terraform/

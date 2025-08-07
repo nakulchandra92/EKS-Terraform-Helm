@@ -1,4 +1,4 @@
-# helm/tech-interview/values.yaml
+# helm/demo-app/values.yaml
 # Minimal configuration for assessment
 
 image:

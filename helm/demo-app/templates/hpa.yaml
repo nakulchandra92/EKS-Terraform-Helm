@@ -1,4 +1,4 @@
-# helm/tech-interview/templates/hpa.yaml
+# helm/demo-app/templates/hpa.yaml
 {{- if .Values.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
