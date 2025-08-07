@@ -20,6 +20,6 @@ variable "aws_region" {
 variable "enable_cluster_autoscaler" {
   description = "Enable cluster autoscaler IAM role"
   type        = bool
-  default     = true
+  default     = false
 }
 

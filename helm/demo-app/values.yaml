@@ -1,5 +1,5 @@
 # helm/demo-app/values.yaml
-# Minimal configuration for assessment
+
 
 image:
   repository: gradyent/tech-interview

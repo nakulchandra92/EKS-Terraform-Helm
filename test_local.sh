@@ -198,13 +198,13 @@ sleep 5
 if curl -f -s http://localhost:8080/ | grep -q "OK"; then
     log_success "✅ Ingress readiness probe test PASSED"
 else
-    log_warning "⚠️ Ingress test failed - this is normal in some environments"
+    log_warning " Ingress test failed - this is normal in some environments"
 fi
 
 if curl -f -s http://localhost:8080/hello | grep -q "world"; then
     log_success "✅ Ingress liveness probe test PASSED"
 else
-    log_warning "⚠️ Ingress liveness test failed - this is normal in some environments"
+    log_warning " Ingress liveness test failed - this is normal in some environments"
 fi
 
 # Test auto-scaling capability
@@ -242,10 +242,10 @@ else
 fi
 
 # Display final summary
-log_success "🎉 Local Testing Completed Successfully!"
+log_success " Local Testing Completed Successfully!"
 echo ""
 echo "========================================"
-echo "📋 Test Results Summary"
+echo " Test Results Summary"
 echo "========================================"
 echo "✅ Kind cluster created and configured"
 echo "✅ Metrics-server deployed for HPA"
@@ -256,17 +256,17 @@ echo "✅ Auto-scaling configured and tested"
 echo "✅ Helm chart validated"
 echo "✅ Terraform syntax validated"
 echo ""
-echo "🌐 Access Points:"
+echo " Access Points:"
 echo "  - Via port-forward: kubectl port-forward svc/demo-app 9090:80"
 echo "  - Via ingress: http://localhost:8080 (if working)"
 echo ""
-echo "🔍 Monitoring Commands:"
+echo " Monitoring Commands:"
 echo "  - kubectl get pods"
 echo "  - kubectl get hpa"
 echo "  - kubectl get ingress"
 echo "  - kubectl logs -f deployment/demo-app"
 echo ""
-echo "🧹 Cleanup:"
+echo " Cleanup:"
 echo "  - kind delete cluster --name $CLUSTER_NAME"
 echo ""
 

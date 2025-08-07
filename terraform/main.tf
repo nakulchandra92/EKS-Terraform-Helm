@@ -1,4 +1,4 @@
-# terraform/main.tf - Universal Compatible Version
+# terraform/main.tf 
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -13,11 +13,11 @@ terraform {
   }
 
   # Comment out S3 backend for local testing
-  # backend "s3" {
-  #   bucket = "eks-demo-app-tfstate"
-  #   key    = "minimal-eks/terraform.tfstate"
-  #   region = "eu-central-1"
-  # }
+   backend "s3" {
+     bucket = "eks-demo-app-tfstate"
+     key    = "minimal-eks/terraform.tfstate"
+     region = "eu-central-1"
+   }
 }
 
 provider "aws" {
@@ -86,7 +86,7 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  # Use the most compatible node group configuration
+  
   eks_managed_node_groups = {
     main = {
       name = "main-nodes"
@@ -132,7 +132,7 @@ module "eks" {
   }
 }
 
-# Kubernetes provider (optional - only needed if deploying K8s resources via Terraform)
+# Kubernetes provider 
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -144,7 +144,7 @@ provider "kubernetes" {
   }
 }
 
-# Simple outputs
+#  outputs
 output "cluster_endpoint" {
   description = "Endpoint for EKS control plane"
   value       = module.eks.cluster_endpoint
@@ -165,7 +165,9 @@ output "kubectl_config" {
   value       = "aws eks --region ${var.aws_region} update-kubeconfig --name ${module.eks.cluster_name}"
 }
 
-# Optional: Basic IAM role for cluster autoscaler (simplified)
+
+
+# : Basic IAM role for cluster autoscaler 
 resource "aws_iam_role" "cluster_autoscaler" {
   count = var.enable_cluster_autoscaler ? 1 : 0
   name  = "${var.cluster_name}-cluster-autoscaler"
