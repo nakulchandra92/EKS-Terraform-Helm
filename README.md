@@ -1,7 +1,7 @@
 
-# EKS Terraform Helm Solution
+# EKS-Terraform-Helm Solution
 
-A production-ready Kubernetes application deployment on AWS EKS with automated scaling and CI/CD.
+A production-ready Kubernetes application deployment on AWS EKS with automated scaling and CI/CD using Terraform, Github actions and helm.
 
 ## Architecture
 
@@ -124,6 +124,7 @@ kind delete cluster --name tech-interview-test
 cd terraform/
 terraform destroy
 ```
+
 
 
 
