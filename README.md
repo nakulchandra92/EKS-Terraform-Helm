@@ -7,6 +7,14 @@ A production-ready Kubernetes application deployment on AWS EKS with automated s
 
 ![Architecture Diagram](Architecture_Diagram.png)
 
+# Technology Stack
+
+- **Infrastructure: Terraform, AWS EKS, VPC, ALB**
+- **Container Platform: Kubernetes, Docker**
+- **Application Packaging: Helm**
+- **CI/CD: GitHub Actions**
+- **Monitoring: CloudWatch, Metrics Server**
+
 ## Features
 
 - ✅ **EKS Cluster** deployed with Terraform
