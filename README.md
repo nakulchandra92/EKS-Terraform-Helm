@@ -25,7 +25,7 @@ A production-ready Kubernetes application deployment on AWS EKS with automated s
 brew install docker kind kubectl helm terraform awscli
 ```
 
-### Local Testing (Free)
+### Local Testing 
 
 ```bash
 # Test locally with Kind
@@ -36,52 +36,15 @@ chmod +x test-local.sh
 curl http://localhost:8080/      # Returns "OK"
 curl http://localhost:8080/hello # Returns "world"
 ```
-
-### AWS Deployment
-
 ```bash
-# 1. Setup AWS credentials
-aws configure
+#Test GitHub Actions Workflow:
 
-# 2. Create S3 bucket for Terraform state
-aws s3 mb s3://your-terraform-state-bucket --region eu-central-1
+brew install act
 
-# 3. Update bucket name in terraform/main.tf
-sed -i 's/eks-demo-app-tfstate/your-bucket-name/g' terraform/main.tf
+# Test the workflow (without actually deploying)
+act -W .github/workflows/deploy.yaml -j validate -e pull_request.json
 
-# 4. Deploy infrastructure
-cd terraform/
-terraform init
-terraform apply
-
-# 5. Configure kubectl
-aws eks update-kubeconfig --region eu-central-1 --name minimal-eks
-
-# 6. Deploy application
-cd ../helm/demo-app/
-helm upgrade --install demo-app . --wait
-
-# 7. Test endpoints
-kubectl get ingress  # Get ALB URL
-curl http://your-alb-url/
-curl http://your-alb-url/hello
 ```
-
-## GitHub Actions (Recommended)
-
-1. **Add AWS credentials** to GitHub Secrets:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-
-2. **Push to main branch**:
-   ```bash
-   git add .
-   git commit -m "Deploy EKS solution"
-   git push origin main
-   ```
-
-3. **Watch deployment** in GitHub Actions tab
-
 ## Project Structure
 
 ```
