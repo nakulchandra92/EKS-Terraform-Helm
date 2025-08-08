@@ -70,8 +70,8 @@ brew install docker kind kubectl helm terraform awscli
 ```bash
 git clone https://github.com/nakulchandra92/EKS-Terraform-Helm
 # Test locally with Kind
-chmod +x test-local.sh
-./test-local.sh
+chmod +x test_local.sh
+./test_local.sh
 
 # Test health endpoints
 curl http://localhost:8080/      # Returns "OK"
@@ -106,6 +106,7 @@ The application provides the required endpoints:
 - **Kubernetes Metrics**: Metrics Server provides CPU/memory data for auto-scaling
 - **Health Checks**: Automated readiness and liveness probe monitoring
 - **Basic AWS Metrics**: EKS automatically sends basic cluster metrics to CloudWatch
+
 
 
 
