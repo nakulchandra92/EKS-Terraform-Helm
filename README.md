@@ -1,7 +1,7 @@
 
 # EKS-Terraform-Helm Solution
 
-A production-ready Kubernetes application deployment on AWS EKS with automated scaling and CI/CD using Terraform, Github actions and helm.
+A production-ready Kubernetes application deployment on AWS EKS with automated scaling and CI/CD using Terraform, Github actions and helm. This is a minimal solution which provides the foundation for the complete production system.
 
 ## Architecture
 
@@ -15,14 +15,46 @@ A production-ready Kubernetes application deployment on AWS EKS with automated s
 - **CI/CD: GitHub Actions**
 - **Monitoring: CloudWatch, Metrics Server**
 
-## Features
+## 💡 What's Included (Core Features)
 
-- ✅ **EKS Cluster** deployed with Terraform
-- ✅ **Auto-scaling** with HPA (2-10 pods) and Cluster Autoscaler (1-5 nodes)
-- ✅ **Cost optimization** using spot instances (50-70% savings)
-- ✅ **Health checks** with required endpoints
-- ✅ **CI/CD** with GitHub Actions
-- ✅ **Load balancing** with AWS ALB and Ingress
+### ✅ **Scalability**
+- **Horizontal Pod Autoscaler**: Scales 2-10 replicas based on CPU
+- **Cluster Autoscaler**: Scales nodes 1-5 automatically  
+- **Multi-AZ deployment**: High availability across 2 zones
+
+### ✅ **Monitoring** 
+- **CloudWatch**: Built-in AWS monitoring
+- **Kubernetes metrics-server**: For HPA functionality
+- **Health checks**: Readiness and liveness probes
+
+### ✅ **Cost Optimization**
+- **Spot instances**: 50% cost savings
+- **Right-sized instances**: t3.medium for cost efficiency
+- **Auto-scaling**: Only pay for what you use
+
+### ✅ **Ease of Use**
+- **Automated CI/CD**: GitHub Actions deploys on commit to main
+- **Professional ingress**: AWS ALB with proper load balancing
+- **Helm packaging**: Standardized deployment
+- **CLocal testing without AWS**: Script to test the solution in your local machine without AWS
+
+### ✅ **Bonus Points Included:**
+- **✅ Ingress configuration**: AWS Application Load Balancer with ALB Controller
+- **✅ CI/CD pipeline**: Complete GitHub Actions workflow  
+- **✅ Architecture design**: Multi-AZ, auto-scaling, spot instances
+
+## Project Structure
+
+```
+├── terraform/           # Infrastructure as Code
+│   ├── main.tf         # EKS cluster configuration
+│   └── variables.tf    # Configuration variables
+├── helm/demo-app/ # Kubernetes application
+│   ├── values.yaml     # Application configuration
+│   └── templates/      # K8s manifests
+├── .github/workflows/  # CI/CD pipeline
+└── test-local.sh      # Local testing script
+```
 
 ## Quick Start
 
@@ -33,9 +65,10 @@ A production-ready Kubernetes application deployment on AWS EKS with automated s
 brew install docker kind kubectl helm terraform awscli
 ```
 
-### Local Testing 
+### Testing in local machine
 
 ```bash
+git clone https://github.com/nakulchandra92/EKS-Terraform-Helm
 # Test locally with Kind
 chmod +x test-local.sh
 ./test-local.sh
@@ -53,18 +86,7 @@ brew install act
 act -W .github/workflows/deploy.yaml -j validate -e pull_request.json
 
 ```
-## Project Structure
 
-```
-├── terraform/           # Infrastructure as Code
-│   ├── main.tf         # EKS cluster configuration
-│   └── variables.tf    # Configuration variables
-├── helm/demo-app/ # Kubernetes application
-│   ├── values.yaml     # Application configuration
-│   └── templates/      # K8s manifests
-├── .github/workflows/  # CI/CD pipeline
-└── test-local.sh      # Local testing script
-```
 
 ## Health Checks
 
@@ -85,16 +107,7 @@ The application provides the required endpoints:
 - **Health Checks**: Automated readiness and liveness probe monitoring
 - **Basic AWS Metrics**: EKS automatically sends basic cluster metrics to CloudWatch
 
-## Cleanup
 
-```bash
-# Delete local cluster
-kind delete cluster --name demo-test
-
-# Delete AWS resources
-cd terraform/
-terraform destroy
-```
 
 
 
