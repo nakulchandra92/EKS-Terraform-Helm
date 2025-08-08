@@ -7,6 +7,14 @@ A production-ready Kubernetes application deployment on AWS EKS with automated s
 
 ![Architecture Diagram](Architecture_Diagram.png)
 
+## Architecture Philosophy
+I've designed this as a minimal viable solution that demonstrates enterprise-grade practices while maintaining simplicity for demonstration purposes. The architecture is intentionally modular and can be enhanced for production environments with additional components such as:
+
+- **Advanced monitoring and observability (Prometheus, Grafana, ELK stack)
+- **Enhanced security scanning and policy enforcement
+- **Multi-environment promotion pipelines
+- **Disaster recovery and backup strategies
+  
 # Technology Stack
 
 - **Infrastructure: Terraform, AWS EKS, VPC, ALB**
@@ -106,6 +114,7 @@ The application provides the required endpoints:
 - **Kubernetes Metrics**: Metrics Server provides CPU/memory data for auto-scaling
 - **Health Checks**: Automated readiness and liveness probe monitoring
 - **Basic AWS Metrics**: EKS automatically sends basic cluster metrics to CloudWatch
+
 
 
 
